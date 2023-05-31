@@ -80,9 +80,31 @@ def train_vae(vae, x_train_minority, batch_size, epochs):
             validation_split=0.1)
 
 # Step 4: Evaluate the Generated Data
-def evaluate_generated_data(real_data, generated_data):
-    # Compare the generated data points to real data points
-    pass
+def generate_data(vae, n_samples, latent_dim):
+    z_samples = np.random.normal(0, 1, size=(n_samples, latent_dim))
+    generated_data = vae.get_layer('decoder')(z_samples)
+    return K.eval(generated_data)
+
+def plot_tsne(real_data, generated_data):
+    tsne = TSNE(n_components=2, random_state=42)
+    combined_data = np.vstack((real_data, generated_data))
+    tsne_results = tsne.fit_transform(combined_data)
+
+    plt.figure(figsize=(8, 6))
+    plt.scatter(tsne_results[:len(real_data), 0], tsne_results[:len(real_data), 1], c='b', label='Real Data')
+    plt.scatter(tsne_results[len(real_data):, 0], tsne_results[len(real_data):, 1], c='r', label='Generated Data')
+    plt.legend()
+    plt.title('t-SNE Visualization of Real and Generated Data')
+    plt.show()
+    
+def evaluate_generated_data(x_train_minority, vae, n_samples, latent_dim):
+    # Generate synthetic data points
+    generated_data = generate_data(vae, n_samples, latent_dim)
+
+    # Visualize the real and generated data using t-SNE
+    plot_tsne(x_train_minority, generated_data)
+
+    return x_train_minority, generated_data
 
 # Step 5: Augment the Dataset
 def augment_dataset(x_train, y_train, vae, minority_class, n_samples):
