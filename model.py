@@ -69,8 +69,15 @@ def build_vae(input_dim, intermediate_dim, latent_dim):
 
 # Step 3: Train the Generative Model
 def train_vae(vae, x_train_minority, batch_size, epochs):
+    # Compile the VAE
+    vae.compile(optimizer=Adam(learning_rate=0.001), metrics=None)
+
     # Train the VAE on the minority class
-    pass
+    vae.fit(x_train_minority, x_train_minority,
+            batch_size=batch_size,
+            epochs=epochs,
+            verbose=1,
+            validation_split=0.1)
 
 # Step 4: Evaluate the Generated Data
 def evaluate_generated_data(real_data, generated_data):
