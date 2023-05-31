@@ -167,20 +167,34 @@ def compare_classifiers(baseline_classifier, augmented_classifier, X_test, y_tes
 
 # Main workflow
 def main():
-    x_train, x_test, y_train, y_test, x_train_minority = load_and_preprocess_data()
-    
-    vae = build_vae(input_dim, intermediate_dim, latent_dim)
-    train_vae(vae, x_train_minority, batch_size, epochs)
-    
-    real_data, generated_data = evaluate_generated_data(x_train_minority, vae)
-    plot_tsne(real_data, generated_data)
-    
-    x_train_augmented, y_train_augmented = augment_dataset(x_train, y_train, vae, minority_class, n_samples)
-    
-    original_results = train_and_evaluate_models(x_train, y_train, x_test, y_test)
-    augmented_results = train_and_evaluate_models(x_train_augmented, y_train_augmented, x_test, y_test)
-    
-    compare_performance(original_results, augmented_results)
+    # Load data and preprocess
+    X_train, X_test, y_train, y_test, X_train_minority = load_and_preprocess_data()
+
+    # Build and train the VAE
+    latent_dim = 100
+    vae, encoder, decoder = build_vae(X_train_minority.shape[1], latent_dim)
+    batch_size = 32
+    epochs = 100
+    train_vae(vae, X_train_minority, batch_size, epochs)
+
+    # Evaluate the generated data
+    n_samples = len(X_train_minority)
+    real_data, generated_data = evaluate_generated_data(X_train_minority, vae, n_samples, latent_dim)
+
+    # Build and train the classifier with augmented data
+    classifier = build_classifier(X_train.shape[1])
+    X_train_augmented, y_train_augmented = augment_training_set(X_train, y_train, generated_data)
+    train_classifier(classifier, X_train_augmented, y_train_augmented, batch_size, epochs)
+
+    # Evaluate classifier performance
+    evaluate_classifier(classifier, X_test, y_test)
+
+    # Train a baseline classifier and compare the performance
+    baseline_classifier = train_baseline_classifier(X_train, y_train, X_train.shape[1], batch_size, epochs)
+    compare_classifiers(baseline_classifier, classifier, X_test, y_test)
+
+if __name__ == "__main__":
+    main()
 
 if __name__ == "__main__":
     main()
