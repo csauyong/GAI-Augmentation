@@ -149,10 +149,21 @@ def evaluate_classifier(classifier, X_test, y_test):
     print(roc_auc_score(y_test, y_prob))
 
 # Step 7: Compare Performance
-def compare_performance(original_results, augmented_results):
-    # Compare the performance of the classification models
-    # on the original and augmented datasets
-    pass
+def train_baseline_classifier(X_train, y_train, input_dim, batch_size, epochs):
+    baseline_classifier = build_classifier(input_dim)
+    baseline_classifier.fit(X_train, y_train,
+                            batch_size=batch_size,
+                            epochs=epochs,
+                            verbose=1,
+                            validation_split=0.1)
+    return baseline_classifier
+
+def compare_classifiers(baseline_classifier, augmented_classifier, X_test, y_test):
+    print("Baseline Classifier Performance:")
+    evaluate_classifier(baseline_classifier, X_test, y_test)
+
+    print("\nAugmented Classifier Performance:")
+    evaluate_classifier(augmented_classifier, X_test, y_test)
 
 # Main workflow
 def main():
