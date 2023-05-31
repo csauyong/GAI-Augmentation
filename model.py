@@ -107,15 +107,46 @@ def evaluate_generated_data(x_train_minority, vae, n_samples, latent_dim):
     return x_train_minority, generated_data
 
 # Step 5: Augment the Dataset
-def augment_dataset(x_train, y_train, vae, minority_class, n_samples):
-    # Augment the original dataset with the generated data points
-    pass
+def build_classifier(input_dim):
+    classifier = Sequential()
+    classifier.add(Dense(128, input_dim=input_dim, activation='relu'))
+    classifier.add(Dropout(0.2))
+    classifier.add(Dense(64, activation='relu'))
+    classifier.add(Dropout(0.2))
+    classifier.add(Dense(1, activation='sigmoid'))
+
+    classifier.compile(loss='binary_crossentropy', optimizer=Adam(learning_rate=0.001), metrics=['accuracy'])
+
+    return classifier
+
+def augment_training_set(X_train, y_train, generated_data):
+    X_train_augmented = np.vstack((X_train, generated_data))
+    y_train_augmented = np.hstack((y_train, np.ones(generated_data.shape[0])))
+    return X_train_augmented, y_train_augmented
 
 # Step 6: Train and Evaluate Classification Models
-def train_and_evaluate_models(x_train, y_train, x_test, y_test):
-    # Train different classification models
-    # Evaluate their performance
-    pass
+def train_classifier(classifier, X_train_augmented, y_train_augmented, batch_size, epochs):
+    classifier.fit(X_train_augmented, y_train_augmented,
+                   batch_size=batch_size,
+                   epochs=epochs,
+                   verbose=1,
+                   validation_split=0.1)
+    
+def evaluate_classifier(classifier, X_test, y_test):
+    y_pred = classifier.predict(X_test).round()
+    y_prob = classifier.predict_proba(X_test)
+
+    # Classification report
+    print("Classification Report:")
+    print(classification_report(y_test, y_pred))
+
+    # Confusion matrix
+    print("Confusion Matrix:")
+    print(confusion_matrix(y_test, y_pred))
+
+    # ROC-AUC score
+    print("ROC-AUC Score:")
+    print(roc_auc_score(y_test, y_prob))
 
 # Step 7: Compare Performance
 def compare_performance(original_results, augmented_results):
