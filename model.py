@@ -34,12 +34,38 @@ def load_and_preprocess_data():
 
 # Step 2: Implement the Generative Model (VAE)
 def sampling(args):
-    # Define the sampling function for the VAE
-    pass
+    z_mean, z_log_var = args
+    batch = K.shape(z_mean)[0]
+    dim = K.int_shape(z_mean)[1]
+    epsilon = K.random_normal(shape=(batch, dim))
+    return z_mean + K.exp(0.5 * z_log_var) * epsilon
 
 def build_vae(input_dim, intermediate_dim, latent_dim):
-    # Build the VAE model
-    pass
+    # Encoder
+    inputs = Input(shape=(input_dim,), name='encoder_input')
+    x = Dense(intermediate_dim, activation='relu')(inputs)
+    z_mean = Dense(latent_dim, name='z_mean')(x)
+    z_log_var = Dense(latent_dim, name='z_log_var')(x)
+    z = Lambda(sampling, output_shape=(latent_dim,), name='z')([z_mean, z_log_var])
+    encoder = Model(inputs, [z_mean, z_log_var, z], name='encoder')
+
+    # Decoder
+    latent_inputs = Input(shape=(latent_dim,), name='z_sampling')
+    x = Dense(intermediate_dim, activation='relu')(latent_inputs)
+    outputs = Dense(input_dim, activation='sigmoid')(x)
+    decoder = Model(latent_inputs, outputs, name='decoder')
+
+    # VAE
+    outputs = decoder(encoder(inputs)[2])
+    vae = Model(inputs, outputs, name='vae')
+
+    # Loss function
+    reconstruction_loss = binary_crossentropy(inputs, outputs) * input_dim
+    kl_loss = -0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
+    vae_loss = K.mean(reconstruction_loss + kl_loss)
+    vae.add_loss(vae_loss)
+
+    return vae
 
 # Step 3: Train the Generative Model
 def train_vae(vae, x_train_minority, batch_size, epochs):
